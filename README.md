@@ -1,50 +1,80 @@
-# Doc Analyzer
+# Text Analyzer — микросервисная архитектура для анализа текста
 
-Система на Go для загрузки, хранения и анализа документов.  
-Архитектура построена на микросервисах:
+Проект реализует микросервисный подход к анализу текстовых файлов:  
+- подсчёт статистики  
+- обнаружение плагиата  
+- генерация облака слов  
 
-- **Gateway** — принимает клиентские запросы и маршрутизирует их.
-- **Storage** — сервис для сохранения файлов.
-- **Analyzer** — сервис для анализа текста.
+Система построена на трех независимых сервисах с четким разделением ответственности: API Gateway, File Storing Service и File Analysis Service.  
 
-Сервисы общаются через **gRPC**. Для запуска используется **Docker Compose**, для сборки и тестирования — `Makefile`.
+---
 
-## Запуск
+## Возможности
 
-### Вручную
+- Подсчёт статистики — количество абзацев, слов и символов  
+- Проверка на плагиат — поиск 100% совпадений среди загруженных файлов  
+- Облако слов — визуализация текста через внешний API  
+- Swagger-документация — автоматическая генерация и доступ через браузер  
+- Тестирование — покрытие тестами более 65% с удобным HTML-отчётом  
+
+---
+
+## Архитектура
+
+- API Gateway — маршрутизация запросов  
+- File Storing Service — хранение и доступ к файлам  
+- File Analysis Service — анализ и сохранение результатов  
+
+Взаимодействие между сервисами осуществляется через gRPC, API описаны в Swagger.  
+
+---
+
+## Установка и запуск
+
+### Требования
+- Docker и Docker Compose  
+- Go 1.20+  
+- [Swag](https://github.com/swaggo/swag) для генерации Swagger-документации  
+
+### Клонирование репозитория
 ```bash
-go build -o bin/gateway ./cmd/gateway
-go build -o bin/storage ./cmd/storage
-go build -o bin/analyzer ./cmd/analyzer
-
-./bin/gateway &
-./bin/storage &
-./bin/analyzer &
+git clone <repository-url>
 ```
 
-### Docker Compose
+### Генерация документации
 ```bash
-docker-compose up --build
+make swagger
 ```
 
-## Пример
+### Запуск сервисов
+```bash
+docker-compose up -d
+```
 
-1. Загрузка файла:
-   ```
-   curl -F "file=@sample.txt" http://localhost:8080/upload
-   ```
-   → `{"file_id": "12345"}`
+По умолчанию будут подняты:  
+- PostgreSQL → :5432  
+- File Storing Service → :50051  
+- File Analysis Service → :50052  
+- API Gateway → :8080  
 
-2. Анализ файла:
-   ```
-   curl http://localhost:8080/analyze/12345
-   ```
-   → `{"words": 350, "unique_words": 120}`
+Swagger UI доступен по адресу:  
+http://localhost:8080/swagger/index.html  
 
-## Технологии
+---
 
-- Go 1.21+
-- gRPC, net/http
-- PostgreSQL
-- Docker, Docker Compose
-# doc-analyzer
+## Тестирование
+
+Запуск тестов и генерация отчёта:  
+```bash
+make test-coverage
+```
+
+Результаты:  
+- coverage/coverage.out — отчёт в текстовом виде  
+- coverage/coverage.html — интерактивный отчёт (открыть в браузере)  
+
+---
+
+## Примечания
+- В отчёте покрытия не учитываются автогенерируемые и mock-файлы  
+- При недоступности сервисов API Gateway использует retry и таймауты  
