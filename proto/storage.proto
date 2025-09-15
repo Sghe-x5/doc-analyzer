@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package storage;
+option go_package = "local.dev/doc-analyzer/internal/proto/storage;storage";
+
+
+// Сервис хранения файлов
+service StorageService {
+  // UploadFile — загрузка файла, возвращает ID
+  rpc UploadFile(UploadFileRequest) returns (UploadFileResponse);
+
+  // GetFile — получение файла по его ID
+  rpc GetFile(GetFileRequest) returns (GetFileResponse);
+}
+
+// Запрос на загрузку
+message UploadFileRequest {
+  string file_name = 1;
+  bytes content = 2;
+}
+
+// Ответ после загрузки
+message UploadFileResponse {
+  string file_id = 1;
+}
+
+// Запрос на получение файла
+message GetFileRequest {
+  string file_id = 1;
+}
+
+// Ответ с файлом
+message GetFileResponse {
+  string file_name = 1;
+  bytes content = 2;
+}

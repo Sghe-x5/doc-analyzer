@@ -1,0 +1,7 @@
+.idea
+proto/google
+proto/grafeas
+internal/proto
+api
+*docs
+coverage

@@ -1,0 +1,74 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: textanalyzer
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  file-storing-service:
+    build:
+      context: .
+      dockerfile: ./build/file_storing_service/Dockerfile
+    environment:
+      DATABASE_URL: "postgres://postgres:postgres@postgres:5432/textanalyzer?sslmode=disable"
+      STORAGE_PATH: "/app/storage/files"
+      PORT: "50051"
+    volumes:
+      - file_storage:/app/storage/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "50051:50051"
+
+  file-analysis-service:
+    build:
+      context: .
+      dockerfile: ./build/file_analysis_service/Dockerfile
+    environment:
+      DATABASE_URL: "postgres://postgres:postgres@postgres:5432/textanalyzer?sslmode=disable"
+      STORAGE_PATH: "/app/storage/wordclouds"
+      PORT: "50052"
+      FILE_STORING_SERVICE_ADDRESS: "file-storing-service:50051"
+      WORDCLOUD_API_URL: "https://quickchart.io/wordcloud"
+    volumes:
+      - wordcloud_storage:/app/storage/wordclouds
+    depends_on:
+      postgres:
+        condition: service_healthy
+      file-storing-service:
+        condition: service_started
+    ports:
+      - "50052:50052"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./build/api_gateway/Dockerfile
+    environment:
+      HTTP_PORT: "8080"
+      FILE_STORING_SERVICE_ADDRESS: "file-storing-service:50051"
+      FILE_ANALYSIS_SERVICE_ADDRESS: "file-analysis-service:50052"
+      GIN_MODE: "release"
+    depends_on:
+      - file-storing-service
+      - file-analysis-service
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
+  file_storage:
+  wordcloud_storage:

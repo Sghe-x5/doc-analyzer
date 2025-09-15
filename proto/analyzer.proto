@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package analyzer;
+option go_package = "local.dev/doc-analyzer/internal/proto/analyzer;analyzer";
+
+// Сервис анализа документов
+service AnalyzerService {
+  rpc AnalyzeFile(AnalyzeFileRequest) returns (AnalyzeFileResponse);
+  rpc GetWordCloud(GetWordCloudRequest) returns (GetWordCloudResponse);
+}
+
+// Запрос для анализа файла
+message AnalyzeFileRequest {
+  string file_id = 1;
+  bool generate_word_cloud = 2;
+}
+
+// Ответ на запрос анализа
+message AnalyzeFileResponse {
+  int32 word_count = 1;
+  int32 unique_words = 2;
+  string summary = 3;
+}
+
+// Запрос облака слов
+message GetWordCloudRequest {
+  string location = 1;
+}
+
+// Ответ с облаком слов
+message GetWordCloudResponse {
+  bytes image = 1;
+}
